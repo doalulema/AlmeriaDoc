@@ -1,12 +1,51 @@
 ﻿using System;
+using System.IO;
+using Microsoft.Extensions.Configuration;
+using Quartz;
+using Quartz.Impl;
 
 namespace IoT.Netatmo.Client
 {
-    class Program
+    public class Program
     {
-        static void Main(string[] args)
+        public static IConfiguration Configuration { get; private set; }
+
+        static void Main()
         {
-            Console.WriteLine("Hello World!");
+            BuildConfiguration();
+            ScheduleJob();
+            
+            Console.WriteLine("Press ENTER to shutdown the app.");
+            Console.ReadLine();
+        }
+
+        private static void ScheduleJob()
+        {
+            IScheduler scheduler = StdSchedulerFactory.GetDefaultScheduler().GetAwaiter().GetResult();
+            scheduler.Start();
+
+            IJobDetail job = JobBuilder.Create<DataJob>()
+                .WithIdentity("job1", "group1")
+                .Build();
+            
+            ITrigger trigger = TriggerBuilder.Create()
+                .WithIdentity("trigger1", "group1")
+                .StartNow()
+                .WithSimpleSchedule(x => x
+                    .WithIntervalInMinutes(int.Parse(Configuration["periodMins"]))
+                    .RepeatForever())
+                .Build();
+            
+            scheduler.ScheduleJob(job, trigger).GetAwaiter().GetResult();
+        }
+
+        private static void BuildConfiguration()
+        {
+            var builder = new ConfigurationBuilder()
+                .SetBasePath(Directory.GetCurrentDirectory())
+                .AddJsonFile("appsettings.json");
+
+            Configuration = builder.Build();
         }
     }
 }
