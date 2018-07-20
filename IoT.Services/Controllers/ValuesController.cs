@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data.Entity.Migrations;
+using System.Linq;
 using System.Runtime.Serialization;
 using System.Web.Http;
 using IoT.Services.Model;
@@ -26,6 +27,14 @@ namespace IoT.Services.Controllers
             public string Direction { get; set; }
         }
 
+        [HttpGet]
+        [Route("api/values/last")]
+        public DeviceEntry LastValue()
+        {
+            var item = Context.DeviceEntries.OrderByDescending(x => x.timestamp).FirstOrDefault();
+            return item;
+        }
+
         // GET api/values
         public IEnumerable<DeviceEntry> Get()
         {
@@ -36,7 +45,6 @@ namespace IoT.Services.Controllers
         public DeviceEntry Get(Guid id)
         {
             var item = Context.DeviceEntries.Find(id);
-
             return item;
         }
 
